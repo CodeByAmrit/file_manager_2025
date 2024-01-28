@@ -152,6 +152,7 @@ def insert_into_marks2(self, srn, data):
     
     
     try:
+        print(data)
         data = (
             srn,
             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], 
@@ -564,27 +565,37 @@ def insert_pdf_file(srn_no, pdf_path):
     try:
         with open(pdf_path, "rb") as pdf_file:
             pdf_data = pdf_file.read()
-            cursor.execute(
-                """
-                INSERT INTO pdf_files (srn_no, pdf_data)
-                VALUES (?, ?)
-            """,
-                (srn_no, pdf_data),
-            )
-            conn.commit()
-            messagebox.showinfo("Pdf Status", "Pdf File Uploaded Successfully.")
-    except mysql.connector.IntegrityError as e:
-        with open(pdf_path, "rb") as pdf_file:
-            pdf_data = pdf_file.read()
-            cursor.execute(
-                """
-                UPDATE pdf_files SET pdf_data=? WHERE srn_no=?         
+
+            # Check if the record with srn_no already exists
+            cursor.execute("SELECT COUNT(*) FROM pdf_files WHERE srn_no = %s", (srn_no,))
+            record_count = cursor.fetchone()[0]
+
+            if record_count == 0:
+                # Insert a new record
+                cursor.execute(
+                    """
+                    INSERT INTO pdf_files (srn_no, pdf_data)
+                    VALUES (%s, %s)
                 """,
-                (pdf_data, srn_no),
-            )
+                    (srn_no, pdf_data),
+                )
+                messagebox.showinfo("Pdf Status", "Pdf File Uploaded Successfully.")
+            else:
+                # Update existing record
+                cursor.execute(
+                    """
+                    UPDATE pdf_files SET pdf_data=%s WHERE srn_no=%s         
+                    """,
+                    (pdf_data, srn_no),
+                )
+                messagebox.showinfo("Pdf Status", "Pdf File Updated.")
+
+            # Commit the changes
             conn.commit()
-            messagebox.showinfo("Pdf Status", "Pdf File Updated.")
-            # print("PDF Updated")
+
+            
+    except e:
+            messagebox.showerror("Error in pdf Upload", f"{e}")
 
 
 def deleteStudent(srn):
@@ -685,7 +696,7 @@ def save_image():
         # Save the image in JPEG format
         img_resized.save(file_path, "JPEG")
 
-def show_images_from_db(srn):
+def show_images_from_db(srn,w=250, h = 330):
     global current_image_data
 
     # Assuming cursor is defined before this function
@@ -697,7 +708,7 @@ def show_images_from_db(srn):
             current_image_data = img_bytes  # Store the original image data
 
             img = Image.frombytes("RGB", (300, 380), img_bytes)
-            img_resized = img.resize((250, 330), Image.LANCZOS)
+            img_resized = img.resize((w, h), Image.LANCZOS)
             img_tk = ImageTk.PhotoImage(img_resized)
 
             return img_tk

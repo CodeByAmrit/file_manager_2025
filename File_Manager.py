@@ -1,11 +1,10 @@
-import sys, os
-from tkinter import ttk, messagebox, filedialog, StringVar
+import sys, os, time
+from tkinter import ttk
 from tkinter.ttk import OptionMenu
 from customtkinter import *
 from PIL import Image
-import mysql_conn as database
-import multiprocessing
-import time, random
+import threading
+from open_details import *
 
 hovercolor = "#579BE3"
 btn_color = "#098FF0"
@@ -22,10 +21,12 @@ def open_window_in_center(root ,width, height):
     root.geometry(f"{width}x{height}+{x_position}+{y_position}")
 
 def createImage(path, w, h):
-        temp = CTkImage(
-            light_image=Image.open(path), dark_image=Image.open(path), size=(w, h)
-        )
-        return temp
+    temp = CTkImage(
+        light_image=Image.open(path), dark_image=Image.open(path), size=(w, h)
+    )
+    return temp
+    
+
     
 class main_gui(CTk):
     def __init__(self):
@@ -42,39 +43,175 @@ class main_gui(CTk):
         
         self.class_name_list = [ "NURSERY", "KG", "1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH", "11TH", "12TH"]
         self.session_list = [str(str(i) + " - " + str(i+1)) for i in range(2010, 2030)]
+                
+        # image creations
+        self.logo = createImage(resource_path("icons/1.png"), 120, 120)
+        self.home_logo = createImage(resource_path("icons/home.png"), 22, 22)
+        self.student_logo = createImage(resource_path("icons/user-add.png"), 22, 22)
+        self.setting_logo = createImage(resource_path("icons/settings.png"), 22, 22)
+        self.cap_logo = createImage(resource_path("icons/student.png"), 22, 22)
+        self.download_logo = createImage(resource_path("icons/download.png"), 24, 24)
+        self.upload_logo = createImage(resource_path("icons/upload.png"), 24, 24)
         
         
-        self.left_frame = CTkFrame(self, fg_color='white')
+        self.left_frame = CTkFrame(self, fg_color='#F9F9F9')
         self.left_frame.pack(side='left', fill='both')
         
-        self.right_frame = CTkFrame(self, fg_color='white',)
+        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
         self.right_frame.pack(side='left', expand=True, fill='both')
         self.left_frame.pack_propagate(False)
         
-        # image creations
-        self.logo = createImage(resource_path("icons/logo.png"), 80, 80)
-        self.home_logo = createImage(resource_path("icons/home.png"), 22, 22)
-        self.student_logo = createImage(resource_path("icons/user.png"), 22, 22)
-        self.setting_logo = createImage(resource_path("icons/settings.png"), 22, 22)
-        self.cap_logo = createImage(resource_path("icons/student.png"), 22, 22)
-        self.user = createImage(resource_path("icons/display.png"), 40, 40)
-        
-        #logo Plce
+        #logo Place
         self.placeLogo = CTkLabel(self.left_frame, image=self.logo, text="")
         self.placeLogo.pack(pady=20)
         
         # menu left side
-        self.dashboardBtn = self.create_menu_btn(self.left_frame, "Dashboard", self.home_logo)
+        self.dashboardBtn = self.create_menu_btn(self.left_frame, "Dashboard", self.home_logo, cmd=self.create_dashboard_window)
         self.dashboardBtn.pack(ipady=4, ipadx = 8, pady=4)
-        self.registerBtn = self.create_menu_btn(self.left_frame, "New Student", self.student_logo)
+        self.registerBtn = self.create_menu_btn(self.left_frame, "New Student", self.student_logo, cmd = self.create_register_window)
         self.registerBtn.pack(ipady=4, ipadx = 8, pady=4)
-        self.storeBtn = self.create_menu_btn(self.left_frame, "Store Marks", self.cap_logo)
-        self.storeBtn.pack(ipady=4, ipadx = 8, pady=4)
+        self.studentListBtn = self.create_menu_btn(self.left_frame, "View Students", self.cap_logo, cmd=self.create_search_window)
+        self.studentListBtn.pack(ipady=4, ipadx = 8, pady=4)
         self.settingBtn = self.create_menu_btn(self.left_frame, "Setting", self.setting_logo)
         self.settingBtn.pack(side="bottom", pady=10)
         
+        # self.create_search_window()
+        # self.create_dashboard_window()
+        
+        # ------------------------------ Loading Frmes and all -------------------------------- >
+
+        self.logoframe = CTkFrame(self, width=1200, height=600, fg_color="white")
+        self.logoframe.place(x=0, y=0)
+        self.logoframe.grid_propagate(False)
+        self.logoframe.pack_propagate(False)
+        self.splashLogo = createImage(resource_path("icons/1.png"), 200,200)
+        self.spalsh = CTkLabel(self.logoframe,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
+        self.spalsh.pack()
+        
+        self.loading = CTkProgressBar(self.logoframe, width=300,)
+        self.loading.pack()
+        self.loading.set(0)
+        
+        
+        
+    def serach_thread(self):
+        self.searchBtn.configure(state='disabled')
+        process1 = threading.Thread(target=self.search_students)
+        if not process1.is_alive():
+            process1.start()
+     
+    def create_dashboard_window(self):
+        pass
+              
+    def create_register_window(self):
+        self.right_frame.destroy()
+        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame.pack(side='left', expand=True, fill='both')
+        self.left_frame.pack_propagate(False)
+        
+        self.scrollFrameAdd = CTkFrame(
+            master=self.right_frame, bg_color="white", fg_color="white"
+        )
+        self.scrollFrameAdd.pack(fill="both", expand=True)
+        
+        
+        self.RegisterBtn = CTkButton(
+            self.scrollFrameAdd, text="Register", command=lambda: database.insert(self), fg_color=btn_color
+        )
+
+        head  = CTkLabel(self.scrollFrameAdd, text="Register New Student", font=("Calibri bold", 18))
+        head.pack(pady=20)
+        
+        # Personal Infor
+        self.addTopFrame = CTkFrame(
+            self.scrollFrameAdd,
+            border_width=1,
+            border_color="#E3E3E3",
+            corner_radius=5,
+            bg_color="white",
+            fg_color="white",
+        )
+        self.addTopFrame.pack(fill="both", pady=15, padx=15)
+        
+        self.student_photo = upload.ProfilePicEditor(self.addTopFrame)
+        self.RegisterBtn.pack()
+        
+        # heading of addTopFrame
+        headingTop = self.customLabel(self.scrollFrameAdd, "Personal Information")
+        headingTop.place(x=30, y=70)
+        
+        # adding entry name
+        self.labelofName = self.customLabel(self.addTopFrame, "NAME")
+        self.labelofName.grid(row=0, column=0, sticky="w", padx=20, pady=(10, 0))
+        self.entryofName = self.customInput(self.addTopFrame)
+        self.entryofName.grid(row=1, column=0, sticky="w", padx=(30, 10), pady=(0, 20))
+        # adding entry class
+        self.labelofFather = self.customLabel(self.addTopFrame, "Father's Name")
+        self.labelofFather.grid(row=0, column=1, sticky="w", padx=20, pady=(10, 0))
+        self.entryofFather = self.customInput(self.addTopFrame)
+        self.entryofFather.grid(
+            row=1, column=1, sticky="w", padx=(30, 10), pady=(0, 20)
+        )
+        self.labelofMother = self.customLabel(self.addTopFrame, "Mother's Name")
+        self.labelofMother.grid(row=0, column=2, sticky="w", padx=20, pady=(10, 0))
+        self.entryofMother = self.customInput(self.addTopFrame)
+        self.entryofMother.grid(
+            row=1, column=2, sticky="w", padx=(30, 10), pady=(0, 20)
+        )
+        self.labelofSRN_no = self.customLabel(self.addTopFrame, "SRN Number")
+        self.labelofSRN_no.grid(row=0, column=3, sticky="w", padx=20, pady=(10, 0))
+        self.entryofSRN_no = self.customInput(self.addTopFrame)
+        self.entryofSRN_no.grid(
+            row=1, column=3, sticky="w", padx=(30, 10), pady=(0, 20)
+        )
+        self.labelofPEN_no = self.customLabel(self.addTopFrame, "PEN Number")
+        self.labelofPEN_no.grid(row=2, column=0, sticky="w", padx=20, pady=(10, 0))
+        self.entryofPEN_no = self.customInput(self.addTopFrame)
+        self.entryofPEN_no.grid(row=3, column=0, sticky="w", padx=(30, 0), pady=(0, 20))
+        
+        self.labelofAdmission = self.customLabel(self.addTopFrame, "Admission Number")
+        self.labelofAdmission.grid(row=2, column=1, sticky="w", padx=20, pady=(10, 0))
+        self.entryofAdmission = self.customInput(self.addTopFrame)
+        self.entryofAdmission.grid(
+            row=3, column=1, sticky="w", padx=(30, 0), pady=(0, 20)
+        )
+        
+        self.labelofRoll = self.customLabel(self.addTopFrame, "Roll Number")
+        self.labelofRoll.grid(row=4, column=0, sticky="w", padx=20, pady=(10, 0))
+        self.entryofRoll = self.customInput(self.addTopFrame)
+        self.entryofRoll.grid(
+            row=5, column=0, sticky="w", padx=(30, 0), pady=(0, 20)
+        )
+        
+        self.labelofClass = self.customLabel(self.addTopFrame, "Class")
+        self.labelofClass.grid(row=2, column=2, sticky="w", padx=20, pady=(10, 0))
+        self.entryofClass = CTkComboBox(
+            self.addTopFrame,
+            values=self.class_name_list,
+        )
+        self.entryofClass.grid(row=3, column=2, sticky="w", padx=(30, 0), pady=(0, 20))
+        
+        self.labelofSession = self.customLabel(self.addTopFrame, "Session")
+        self.labelofSession.grid(row=2, column=3, sticky="w", padx=20, pady=(10, 0))
+        
+        self.entryofSession = CTkComboBox(
+            self.addTopFrame,
+            values=self.session_list,
+        )
+        self.entryofSession.grid(row=3, column=3, sticky="w", padx=(30, 0), pady=(0, 20))
+                     
+    def create_search_window(self):
+        self.right_frame.destroy()     
+        
+        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame.pack(side='left', expand=True, fill='both')
+        self.left_frame.pack_propagate(False)
+                
+        self.main_progress = CTkProgressBar(self.right_frame, width=1200)
+        self.main_progress.pack(side="bottom")
+        self.main_progress.set(0)
         # right conent 
-        CTkLabel(self.right_frame, text="Dashboard", font=("Calibri ", 28), anchor=W).pack(pady=(20, 0), padx=10, fill='both')
+        CTkLabel(self.right_frame, text="Search Students", font=("Calibri ", 22), anchor=W).pack(pady=(20, 0), padx=10, fill='both')
         self.TopFrame = CTkFrame(self.right_frame, fg_color='white')
         self.TopFrame.pack(fill='both')
         
@@ -158,7 +295,7 @@ class main_gui(CTk):
             text="Search",
             width=20,
             fg_color=btn_color,
-            command=self.search_students
+            command=self.serach_thread
         )
         self.searchBtn.grid(row=3, column=2, sticky="w", padx=10, pady=(0, 20))
 
@@ -197,7 +334,7 @@ class main_gui(CTk):
         
         self.scroll_frame = CTkScrollableFrame(self.right_frame, fg_color='white' )
         self.scroll_frame.pack(fill='both', expand=True)
-        
+            
     def reset_search(self, list):
         for entry in list:
             entry.delete(0, END)
@@ -224,11 +361,27 @@ class main_gui(CTk):
     
     def create_menu_btn(self, frame, txt, img="", cmd=""):
         temp = CTkButton(frame, text=txt, corner_radius=6, width=150, height=35, fg_color='white',
-                         text_color='black', hover_color=hovercolor, anchor=W, image=img)
+                         text_color='black', hover_color=hovercolor, anchor=W, image=img, command=cmd)
         return temp
     
-    
-    
+    def customInput(self, frame):
+        # Create a custom style for the round-cornered Entry
+        style = ttk.Style()
+        style.configure(
+            "Round.TEntry",
+            padding=10,
+            borderwidth=5,
+            relief="flat",
+            background="#f0f0f0",
+            bordercolor="#20A1FF",
+            focuscolor="none",
+        )
+        inputEntry = ttk.Entry(
+            frame, style="Round.TEntry", font=("Verdana", 12), takefocus=True
+        )
+        self.List_of_Entry.append(inputEntry)
+        return inputEntry
+     
     def customInput2(self, frame):
         # Create a custom style for the round-cornered Entry
         style = ttk.Style()
@@ -254,7 +407,7 @@ class main_gui(CTk):
         if len(data_list) > 0:
             for data in data_list:
                 self.make_record_frame(data=data)
-
+                
     def clear_frame(self):
         children = self.scroll_frame.winfo_children()
         for widget in children:
@@ -273,6 +426,7 @@ class main_gui(CTk):
             roll=self.searchRoll.get().upper(),
         )
         self.create_record(self.list_of_student)
+        self.searchBtn.configure(state='normal')
         # print(self.list_of_student)
         
     def make_record_frame(self, data):
@@ -285,7 +439,7 @@ class main_gui(CTk):
             bg_color="white",
             fg_color="white",
         )
-        self.temp.grid(row=0, column = 0, padx=10, pady=10, ipadx=2)
+        self.temp.pack(padx=10, pady=0, ipadx=1,ipady=4, anchor=W)
         
         self._tick = CTkCheckBox(
             master=self.temp,
@@ -296,32 +450,34 @@ class main_gui(CTk):
             corner_radius=3,
             border_width=0.5,
         )
-        self._tick.grid(row=0, column=0, pady=0.5, padx=(16, 16))
+        self._tick.place(x=6, y=20)
         self._tick.configure(
             command=lambda tick=self._tick: self.select_click(data, tick)
         )
         self.ListofCheckBox.append(self._tick)
         
         self._1 = CTkLabel(
-            master=self.temp, justify="left", anchor="w", text=str(data[0]), width=120
+            master=self.temp, justify="left", anchor="w", text=str(data[0]).split(" ")[0], width=120, font=("Calibri bold", 15)
         )
         self._1.grid(row=0, column=1, sticky="s", pady=1, padx=0)
         self._2 = CTkLabel(
-            master=self.temp, justify="left", anchor="w", text=data[1], width=120
+            master=self.temp, justify="left", anchor="w", text=str(data[1]).split(" ")[0], width=120, font=("Calibri ", 13)
         )
         self._2.grid(row=0, column=2, sticky="s", pady=1, padx=0)
         self._3 = CTkLabel(
-            master=self.temp, justify="left", anchor="w", text=data[2], width=100
+            master=self.temp, justify="left", anchor="w", text=str(data[2]).split(" ")[0], width=100, font=("Calibri ", 13)
         )
         self._3.grid(row=0, column=3, sticky="s", pady=1, padx=0)
-        self._4 = CTkLabel(master=self.temp, text=data[3], width=100)
-        self._4.grid(row=0, column=4, sticky="s", pady=1, padx=0)
-        self._5 = CTkLabel(master=self.temp, text=data[4], width=100)
-        self._5.grid(row=0, column=5, sticky="s", pady=1, padx=0)
-        self._6 = CTkLabel(master=self.temp, text=data[5], width=100)
-        self._6.grid(row=0, column=6, sticky="s", pady=1, padx=0)
-        self._7 = CTkLabel(master=self.temp, text=data[6], width=100)
-        self._7.grid(row=0, column=7, sticky="s", pady=1, padx=(0, 0))
+        self._4 = CTkLabel(master=self.temp, text=str(data[3]).split(" ")[0], width=140, text_color='gray',  font=("Calibri ", 13))
+        self._4.grid(row=1, column=1, sticky="s", pady=1, padx=0)
+        self._5 = CTkLabel(master=self.temp, text=data[4], width=140, font=("Calibri ", 13))
+        self._5.grid(row=0, column=4, sticky="s", pady=1, padx=0)
+        self._6 = CTkLabel(master=self.temp, text=data[5], width=100, font=("Calibri ", 13))
+        self._6.grid(row=0, column=5, sticky="s", pady=1, padx=0)
+        self._7 = CTkLabel(master=self.temp, text=data[6], width=100, font=("Calibri ", 13))
+        self._7.grid(row=0, column=6, sticky="s", pady=1, padx=(0, 0))
+        self.temp.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.temp.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
         self._1.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
         self._1.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
         self._2.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
@@ -337,25 +493,62 @@ class main_gui(CTk):
         self._7.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
         self._7.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
     
-        self._1.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._2.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._3.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._4.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._5.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._6.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        self._7.bind("<Double-Button-1>", lambda event: self.modify_record(data))
-        # self.pdf_logo = createImage(resource_path("icons/pdf-file.png"), 24, 24)
-        # self.pdf_eye = CTkButton(
-        #     master=self.temp,
-        #     text="View Pdf",
-        #     compound="left",
-        #     text_color='white',
-        #     font=("calibri bold", 16),
-        #     width=140,
-        #     # image=self.pdf_logo,
-        #     command=lambda: database.retrieve_pdf_file(srn_no=str(data[3])),
-        # )
-        # self.pdf_eye.grid(row=0, column=8, sticky="s", pady=1, padx=(0, 0))
+        self.temp.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._1.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._2.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._3.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._4.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._5.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._6.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._7.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        
+        self.pdf_download_btn = CTkButton(
+            master=self.temp,
+            width=50, height=50,
+            fg_color=btn_color,
+            text="",
+            compound="left",
+            text_color='white',
+            font=("calibri bold", 16),
+            image=self.download_logo,
+            command=lambda: database.retrieve_pdf_file(srn_no=str(data[3])),
+        )
+        self.pdf_download_btn.grid(row=0, column=7, rowspan=2, sticky="s", padx=2, pady=6)
+        
+        self.pdf_upload_btn = CTkButton(
+            master=self.temp,
+            width=50, height=50,
+            text="",
+            compound="left",
+            text_color='white',
+            font=("calibri bold", 16),
+            image=self.upload_logo,
+            fg_color="#ABDEF5",
+            command=lambda: self.open_Pdf_file(srn=str(data[3])),
+        )
+        self.pdf_upload_btn.grid(row=0, column=8, rowspan=2, sticky="s", padx=2, pady=6)
+        
+        self.user_pic_label = CTkLabel(self.temp, text="",  
+                                       width=50, height=50, corner_radius=5)
+        self.user_pic_label.grid(row=0, column=0, rowspan=2, pady=0.5, padx=25)
+        threading.Thread(target=self.getPic, args=(self.user_pic_label, data)).start()
+         
+        self.update_idletasks()
+
+        
+        
+    def getPic(self, obj, data):
+        img = database.show_images_from_db(str(data[3]),60,76,)
+        obj.configure(image=img)
+        
+    def open_Pdf_file(self, srn):
+        # Create a new CTkFileDialog widget
+        self.file_dialog = filedialog.askopenfilename(filetypes=[("pdf", "*.pdf")])
+
+        try:
+            database.insert_pdf_file(srn, self.file_dialog)
+        except Exception as e:
+            print(e)
     
 def main_program():
     root = main_gui()
@@ -384,33 +577,25 @@ class SplashScreen(CTk):
         label = CTkLabel(self,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
         label.pack(pady=50)
        
-        
-        
+def destroy():
+    for i in range(40):
+        root.loading.set((i/100)*4)
+        root.update_idletasks()
+    root.logoframe.destroy()
+    
+def loading_and_destory():
+    import mysql_conn as database
+          
         
 if __name__ == "__main__":
-    a = random.randrange(1, 4)
-    splash_screen = SplashScreen(a)
-
-    # Create a separate process for the main program
-    main_process = multiprocessing.Process(target=main_program)
-
     try:
-        # Start the splash screen
-        splash_screen.update()
-        splash_screen.after(5000, splash_screen.destroy)
-        splash_screen.mainloop()
-
-        # Start the main program in a separate process
-        main_process.start()
-        main_process.join()  # Wait for the main process to finish
+        root = main_gui()
+        root.after(500, loading_and_destory)
+        root.after(2000, destroy)
+        root.mainloop()
 
     except Exception as e:
         print(f"Error: {e}")
-
-    finally:
-        # Ensure that the main process is terminated
-        if main_process.is_alive():
-            main_process.terminate()
         
         
         

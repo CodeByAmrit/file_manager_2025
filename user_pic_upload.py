@@ -46,7 +46,7 @@ class ProfilePicEditor:
         self.canvas.create_image(50, 100, anchor="nw", image=self.icon)
 
         self.btn_upload = ctk.CTkButton(
-            self.userPhotoFrame, text="Choose Photo", command=self.upload_image
+            self.userPhotoFrame, text="Choose Photo", command=self.upload_image, fg_color="#098FF0"
         )
         self.btn_upload.pack(pady=3)
 
