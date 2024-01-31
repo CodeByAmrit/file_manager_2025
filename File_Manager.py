@@ -1,10 +1,11 @@
-import sys, os, time
+import sys, os, random
 from tkinter import ttk
 from tkinter.ttk import OptionMenu
-from customtkinter import *
+import customtkinter 
 from PIL import Image
 import threading
 from open_details import *
+import json
 
 hovercolor = "#579BE3"
 btn_color = "#098FF0"
@@ -21,14 +22,12 @@ def open_window_in_center(root ,width, height):
     root.geometry(f"{width}x{height}+{x_position}+{y_position}")
 
 def createImage(path, w, h):
-    temp = CTkImage(
+    temp = customtkinter.CTkImage(
         light_image=Image.open(path), dark_image=Image.open(path), size=(w, h)
     )
     return temp
-    
-
-    
-class main_gui(CTk):
+        
+class main_gui(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.title("File Manager 2025")
@@ -41,8 +40,9 @@ class main_gui(CTk):
         self.list_of_selected_student = []
         self.ListofCheckBox = []
         
-        self.class_name_list = [ "NURSERY", "KG", "1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH", "11TH", "12TH"]
+        self.class_name_list = [ "NURSERY", "KG", "1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH"]
         self.session_list = [str(str(i) + " - " + str(i+1)) for i in range(2010, 2030)]
+        self.subjects_list = ["ENGLISH", "HINDI", "MATHS", "SCIENCE", "SOCIAL SCIENCE", "EVS", "SANSKRIT", "COMPUTER", "GK", "DRAWING"]
                 
         # image creations
         self.logo = createImage(resource_path("icons/1.png"), 120, 120)
@@ -50,19 +50,21 @@ class main_gui(CTk):
         self.student_logo = createImage(resource_path("icons/user-add.png"), 22, 22)
         self.setting_logo = createImage(resource_path("icons/settings.png"), 22, 22)
         self.cap_logo = createImage(resource_path("icons/student.png"), 22, 22)
+        self.paper_logo = createImage(resource_path("icons/document.png"), 22, 22)
         self.download_logo = createImage(resource_path("icons/download.png"), 24, 24)
         self.upload_logo = createImage(resource_path("icons/upload.png"), 24, 24)
+        self.pdf_logo = createImage(resource_path("icons/pdf-file.png"), 25, 25)
+        self.delete_logo = createImage(resource_path("icons/trash.png"), 25, 25)
         
-        
-        self.left_frame = CTkFrame(self, fg_color='#F9F9F9')
+        self.left_frame = customtkinter.CTkFrame(self, fg_color='#F9F9F9')
         self.left_frame.pack(side='left', fill='both')
         
-        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame = customtkinter.CTkFrame(self, fg_color='#FBFBFB',)
         self.right_frame.pack(side='left', expand=True, fill='both')
         self.left_frame.pack_propagate(False)
         
         #logo Place
-        self.placeLogo = CTkLabel(self.left_frame, image=self.logo, text="")
+        self.placeLogo = customtkinter.CTkLabel(self.left_frame, image=self.logo, text="")
         self.placeLogo.pack(pady=20)
         
         # menu left side
@@ -72,7 +74,9 @@ class main_gui(CTk):
         self.registerBtn.pack(ipady=4, ipadx = 8, pady=4)
         self.studentListBtn = self.create_menu_btn(self.left_frame, "View Students", self.cap_logo, cmd=self.create_search_window)
         self.studentListBtn.pack(ipady=4, ipadx = 8, pady=4)
-        self.settingBtn = self.create_menu_btn(self.left_frame, "Setting", self.setting_logo)
+        self.question_paper_btn = self.create_menu_btn(self.left_frame, "Question Papers", self.paper_logo, cmd=self.create_question_paper_window)
+        self.question_paper_btn.pack(ipady=4, ipadx = 8, pady=4)
+        self.settingBtn = self.create_menu_btn(self.left_frame, "Setting", self.setting_logo, cmd=self.open_settings_window)
         self.settingBtn.pack(side="bottom", pady=10)
         
         # self.create_search_window()
@@ -80,20 +84,19 @@ class main_gui(CTk):
         
         # ------------------------------ Loading Frmes and all -------------------------------- >
 
-        self.logoframe = CTkFrame(self, width=1200, height=600, fg_color="white")
+        self.logoframe = customtkinter.CTkFrame(self, width=1200, height=600, fg_color="white")
         self.logoframe.place(x=0, y=0)
         self.logoframe.grid_propagate(False)
         self.logoframe.pack_propagate(False)
         self.splashLogo = createImage(resource_path("icons/1.png"), 200,200)
-        self.spalsh = CTkLabel(self.logoframe,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
+        self.spalsh = customtkinter.CTkLabel(self.logoframe,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
         self.spalsh.pack()
         
-        self.loading = CTkProgressBar(self.logoframe, width=300,)
+        self.loading = customtkinter.CTkProgressBar(self.logoframe, width=300,)
         self.loading.pack()
         self.loading.set(0)
         
-        
-        
+      
     def serach_thread(self):
         self.searchBtn.configure(state='disabled')
         process1 = threading.Thread(target=self.search_students)
@@ -101,29 +104,79 @@ class main_gui(CTk):
             process1.start()
      
     def create_dashboard_window(self):
-        pass
-              
-    def create_register_window(self):
         self.right_frame.destroy()
-        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame = customtkinter.CTkFrame(self, fg_color='#FBFBFB',)
         self.right_frame.pack(side='left', expand=True, fill='both')
         self.left_frame.pack_propagate(False)
         
-        self.scrollFrameAdd = CTkFrame(
+        # ========= database values to get =============
+        self.s_total = str(database.count_students("students"))
+        self.p_total = str(database.count_students("pdf_files"))
+        
+        
+        self.top_title = customtkinter.CTkLabel(self.right_frame, text='Dashboard',font=("Calibri ", 30))
+        self.top_title.pack(anchor = customtkinter.W, ipadx=20, padx=20, pady=(30,0))
+        
+        mid = customtkinter.CTkFrame(self.right_frame, fg_color='#FBFBFB')
+        mid.pack(anchor = customtkinter.W, padx=20, pady=10)
+        
+        # Total Student Widget
+        self.total_student_frame = customtkinter.CTkFrame(mid, width=200, height=80, 
+                                    fg_color="#F5F5F5", corner_radius=10, border_width=0.8, border_color='#D4D4D4')
+        self.total_student_frame.pack(padx=20, pady=20, side="left")
+        self.total_student_frame.pack_propagate(False)
+                
+        self.total_no_student = customtkinter.CTkLabel(self.total_student_frame, text=self.s_total, font=("Calibri bold", 50),)
+        self.total_no_student.pack(side='bottom', pady=1)
+        customtkinter.CTkLabel(self.total_student_frame, text="Total Students", text_color="gray",font=("Calibri bold", 15)).place(x=10, y=2)
+        
+        # Total PDF Widget
+        self.total_document_frame = customtkinter.CTkFrame(mid, width=200, height=80, 
+                                    fg_color="#F5F5F5", corner_radius=10, border_width=0.8, border_color='#D4D4D4')
+        self.total_document_frame.pack(padx=20, pady=20, side="left")
+        self.total_document_frame.pack_propagate(False)
+                
+        self.total_no_pdf = customtkinter.CTkLabel(self.total_document_frame, text=self.p_total, font=("Calibri bold", 50),)
+        self.total_no_pdf.pack(side='bottom', pady=1)
+        self.total_no_pdf2 = customtkinter.CTkLabel(self.total_document_frame, text="/"+self.s_total, font=("Calibri bold", 20),text_color="gray")
+        self.total_no_pdf2.place(x=140, y=40)
+        customtkinter.CTkLabel(self.total_document_frame, text="PDF File", text_color="gray",font=("Calibri bold", 15)).place(x=10, y=2)
+        
+        # graph
+        self.graph_frame = customtkinter.CTkFrame(self.right_frame, width=720, height=300, corner_radius=10, fg_color='white')
+        self.graph_frame.pack(anchor = customtkinter.W, padx=40, pady=10)
+        self.graph_frame.pack_propagate(False)
+        
+        for i in range(len(self.class_name_list)):
+            customtkinter.CTkFrame(self.graph_frame, width=40, height=random.randint(120, 200), fg_color="#6ac5fe").grid(row = 0, column= i, padx=5,pady=5, sticky="S")
+            l = customtkinter.CTkLabel(self.graph_frame, width=40, text=str(self.class_name_list[i]))
+            l.grid(row=3, column=i, padx=5,pady=5)
+            l.grid_propagate(False)
+            # customtkinter.CTkFrame(self.graph_frame, width=40, height=random.randint(120, 200), fg_color="#6ac5fe").pack(side="left", padx=5,pady=15, anchor=customtkinter.S)
+        
+        
+              
+    def create_register_window(self):
+        self.right_frame.destroy()
+        self.right_frame = customtkinter.CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame.pack(side='left', expand=True, fill='both')
+        self.left_frame.pack_propagate(False)
+        
+        self.scrollFrameAdd = customtkinter.CTkFrame(
             master=self.right_frame, bg_color="white", fg_color="white"
         )
         self.scrollFrameAdd.pack(fill="both", expand=True)
         
         
-        self.RegisterBtn = CTkButton(
+        self.RegisterBtn = customtkinter.CTkButton(
             self.scrollFrameAdd, text="Register", command=lambda: database.insert(self), fg_color=btn_color
         )
 
-        head  = CTkLabel(self.scrollFrameAdd, text="Register New Student", font=("Calibri bold", 18))
+        head  = customtkinter.CTkLabel(self.scrollFrameAdd, text="Register New Student", font=("Calibri bold", 18))
         head.pack(pady=20)
         
         # Personal Infor
-        self.addTopFrame = CTkFrame(
+        self.addTopFrame = customtkinter.CTkFrame(
             self.scrollFrameAdd,
             border_width=1,
             border_color="#E3E3E3",
@@ -185,7 +238,7 @@ class main_gui(CTk):
         
         self.labelofClass = self.customLabel(self.addTopFrame, "Class")
         self.labelofClass.grid(row=2, column=2, sticky="w", padx=20, pady=(10, 0))
-        self.entryofClass = CTkComboBox(
+        self.entryofClass = customtkinter.CTkComboBox(
             self.addTopFrame,
             values=self.class_name_list,
         )
@@ -194,7 +247,7 @@ class main_gui(CTk):
         self.labelofSession = self.customLabel(self.addTopFrame, "Session")
         self.labelofSession.grid(row=2, column=3, sticky="w", padx=20, pady=(10, 0))
         
-        self.entryofSession = CTkComboBox(
+        self.entryofSession = customtkinter.CTkComboBox(
             self.addTopFrame,
             values=self.session_list,
         )
@@ -203,16 +256,13 @@ class main_gui(CTk):
     def create_search_window(self):
         self.right_frame.destroy()     
         
-        self.right_frame = CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame = customtkinter.CTkFrame(self, fg_color='#FBFBFB',)
         self.right_frame.pack(side='left', expand=True, fill='both')
         self.left_frame.pack_propagate(False)
-                
-        self.main_progress = CTkProgressBar(self.right_frame, width=1200)
-        self.main_progress.pack(side="bottom")
-        self.main_progress.set(0)
+       
         # right conent 
-        CTkLabel(self.right_frame, text="Search Students", font=("Calibri ", 22), anchor=W).pack(pady=(20, 0), padx=10, fill='both')
-        self.TopFrame = CTkFrame(self.right_frame, fg_color='white')
+        customtkinter.CTkLabel(self.right_frame, text="Search Students", font=("Calibri ", 22), anchor=customtkinter.W).pack(pady=(20, 0), padx=10, fill='both')
+        self.TopFrame = customtkinter.CTkFrame(self.right_frame, fg_color='white')
         self.TopFrame.pack(fill='both')
         
 
@@ -260,7 +310,7 @@ class main_gui(CTk):
         self.labelofClass.grid(row=2, column=0, sticky="w", padx=(10, 10), pady=(10, 0))
         
         
-        self.searchClass = CTkComboBox(
+        self.searchClass = customtkinter.CTkComboBox(
             self.TopFrame,
             values=self.class_name_list,
         )
@@ -273,14 +323,14 @@ class main_gui(CTk):
         self.labelofSession.grid(row=2, column=1, sticky="w", padx=(10, 10), pady=(10, 0))
         
         # session Search
-        self.searchSession = CTkComboBox(
+        self.searchSession = customtkinter.CTkComboBox(
             self.TopFrame,
             values = self.session_list,
         )
         self.searchSession.grid(row=3, column=1, sticky="w", padx=(10, 10), pady=(0, 20))
         self.searchSession.set("")
         
-        self.searchReset = CTkButton(
+        self.searchReset = customtkinter.CTkButton(
             self.TopFrame,
             text="Reset",
             command=lambda: self.reset_search(self.List_of_Search),
@@ -289,7 +339,7 @@ class main_gui(CTk):
         )
         self.searchReset.grid(row=3, column=2, sticky="w", padx=(80,0), pady=(0, 20))
         
-        self.searchBtn = CTkButton(
+        self.searchBtn = customtkinter.CTkButton(
             self.TopFrame,
             text_color='white',
             text="Search",
@@ -300,11 +350,11 @@ class main_gui(CTk):
         self.searchBtn.grid(row=3, column=2, sticky="w", padx=10, pady=(0, 20))
 
         path = resource_path('icons/increase.png')
-        inc_image = CTkImage(
+        inc_image = customtkinter.CTkImage(
             light_image=Image.open(path), dark_image=Image.open(path), size=(22, 22)
         )
         # promtote btn
-        self.class_promote_btn = CTkButton(
+        self.class_promote_btn = customtkinter.CTkButton(
             self.TopFrame,
             text="Promote",
             text_color='white',
@@ -316,12 +366,12 @@ class main_gui(CTk):
         self.class_promote_btn.grid(row=3, column=4, sticky="w", padx=10, pady=(0, 20))
         
         path2= resource_path('icons/decrease.png')
-        inc_image2 = CTkImage(
+        inc_image2 = customtkinter.CTkImage(
             light_image=Image.open(path2), dark_image=Image.open(path2), size=(22, 22)
         )
         
         # demote btn
-        self.class_demote = CTkButton(
+        self.class_demote = customtkinter.CTkButton(
             self.TopFrame,
             text="Demote",
             text_color='white',
@@ -332,16 +382,110 @@ class main_gui(CTk):
         )
         self.class_demote.grid(row=3, column=5, sticky="w", padx=10, pady=(0, 20))
         
-        self.scroll_frame = CTkScrollableFrame(self.right_frame, fg_color='white' )
+        self.scroll_frame = customtkinter.CTkScrollableFrame(self.right_frame, fg_color='white' )
+        self.scroll_frame.pack(fill='both', expand=True)
+            
+    def create_question_paper_window(self):
+        self.right_frame.destroy()     
+        
+        self.right_frame = customtkinter.CTkFrame(self, fg_color='#FBFBFB',)
+        self.right_frame.pack(side='left', expand=True, fill='both')
+        self.left_frame.pack_propagate(False)
+       
+        # right conent 
+        customtkinter.CTkLabel(self.right_frame, text="Question Paper", font=("Calibri ", 22), anchor=customtkinter.W).pack(pady=(20, 0), padx=10, fill='both')
+        self.TopFrame = customtkinter.CTkFrame(self.right_frame, fg_color='white')
+        self.TopFrame.pack(fill='both')
+        
+        # adding entry Class
+        self.labelofClass = self.customLabel(self.TopFrame, "Class")
+        self.labelofClass.grid(row=2, column=0, sticky="w", padx=(10, 10), pady=(10, 0))
+        
+        self.questionClass = customtkinter.CTkComboBox(
+            self.TopFrame,
+            values=self.class_name_list,
+        )
+        self.questionClass.grid(row=3, column=0, sticky="w", padx=(10, 10), pady=(0, 20))
+        self.questionClass.set("")
+
+        # adding Label Session
+        self.labelofSession = self.customLabel(self.TopFrame, "Session")
+        self.labelofSession.grid(row=2, column=1, sticky="w", padx=(10, 10), pady=(10, 0))
+        
+        # session Search
+        self.questionSession = customtkinter.CTkComboBox(
+            self.TopFrame,
+            values = self.session_list,
+        )
+        self.questionSession.grid(row=3, column=1, sticky="w", padx=(10, 10), pady=(0, 20))
+        self.questionSession.set("")
+        
+        # adding Label term
+        self.labelofTerm = self.customLabel(self.TopFrame, "Term")
+        self.labelofTerm.grid(row=2, column=2, sticky="w", padx=(10, 10), pady=(10, 0))
+        
+        # term question
+        self.questionTerm = customtkinter.CTkComboBox(
+            self.TopFrame,
+            values = ["1st", "2nd", "3rd"],
+        )
+        self.questionTerm.grid(row=3, column=2, sticky="w", padx=(10, 10), pady=(0, 20))
+        self.questionTerm.set("")
+        
+        #subjects btn
+        self.questionSubject = customtkinter.CTkComboBox(
+            self.TopFrame,
+            values = self.subjects_list,
+        )
+        self.questionSubject.grid(row=3, column=3, sticky="w", padx=(10, 10), pady=(0, 20))
+        
+        # reset button
+        self.questionReset = customtkinter.CTkButton(
+            self.TopFrame,
+            text="Reset",
+            command=lambda: self.reset_search(self.List_of_Search),
+            fg_color="#B4BAC7",
+            width=20,
+        )
+        self.questionReset.grid(row=3, column=4, sticky="w", padx=(80,0), pady=(0, 20))
+        
+        # Search Quesetion Paper Btn
+        self.searchBtn = customtkinter.CTkButton(
+            self.TopFrame,
+            text_color='white',
+            text="Search",
+            width=20,
+            fg_color=btn_color,
+            command=self.search_question_paper
+        )
+        self.searchBtn.grid(row=3, column=4, sticky="w", padx=10, pady=(0, 20))
+
+        # Add Question Paper btn
+        self.addPaperBtn = customtkinter.CTkButton(
+            self.TopFrame,
+            text="Upload Paper ",
+            text_color='white',
+            width=20,
+            fg_color=btn_color,
+            command=self.open_question_paper_file
+        )
+        self.addPaperBtn.grid(row=4, column=0, sticky="w", padx=10, pady=(0, 20))
+        
+        self.scroll_frame = customtkinter.CTkScrollableFrame(self.right_frame, fg_color='white' )
         self.scroll_frame.pack(fill='both', expand=True)
             
     def reset_search(self, list):
         for entry in list:
             entry.delete(0, END)
-        self.searchClass.set("")
-        self.searchSession.set("")
-        self.list_of_selected_student.clear()    
-        
+        try:    
+            self.searchClass.set("")
+            self.searchSession.set("")
+            self.list_of_selected_student.clear()    
+        except:
+            self.questionClass.set("")
+            self.questionSession.set("")
+            self.questionTerm.set("")
+            self.questionSubject.set("")
     def on_enter(self, obj):
         obj.configure(border_color="#20A1FF", fg_color="#ADDFFF")
 
@@ -356,12 +500,12 @@ class main_gui(CTk):
             self.list_of_selected_student.remove(data[3])    
     
     def customLabel(self, frame, txt):
-        temp = CTkLabel(master=frame, text=txt, font=("Calibri", 16), bg_color="white")
+        temp = customtkinter.CTkLabel(master=frame, text=txt, font=("Calibri", 16), bg_color="white")
         return temp
     
     def create_menu_btn(self, frame, txt, img="", cmd=""):
-        temp = CTkButton(frame, text=txt, corner_radius=6, width=150, height=35, fg_color='white',
-                         text_color='black', hover_color=hovercolor, anchor=W, image=img, command=cmd)
+        temp = customtkinter.CTkButton(frame, text=txt, corner_radius=6, width=150, height=35, fg_color='white',
+                         text_color='black', hover_color=hovercolor, anchor=customtkinter.W, image=img, command=cmd)
         return temp
     
     def customInput(self, frame):
@@ -430,7 +574,7 @@ class main_gui(CTk):
         # print(self.list_of_student)
         
     def make_record_frame(self, data):
-        self.temp = CTkFrame(
+        self.temp = customtkinter.CTkFrame(
             self.scroll_frame,
             height=60,
             corner_radius=0,
@@ -439,9 +583,9 @@ class main_gui(CTk):
             bg_color="white",
             fg_color="white",
         )
-        self.temp.pack(padx=10, pady=0, ipadx=1,ipady=4, anchor=W)
+        self.temp.pack(padx=10, pady=0, ipadx=1,ipady=4, anchor=customtkinter.W)
         
-        self._tick = CTkCheckBox(
+        self._tick = customtkinter.CTkCheckBox(
             master=self.temp,
             width=20,
             text="",
@@ -450,32 +594,21 @@ class main_gui(CTk):
             corner_radius=3,
             border_width=0.5,
         )
-        self._tick.place(x=6, y=20)
-        self._tick.configure(
-            command=lambda tick=self._tick: self.select_click(data, tick)
-        )
-        self.ListofCheckBox.append(self._tick)
         
-        self._1 = CTkLabel(
+        
+        self._1 = customtkinter.CTkLabel(
             master=self.temp, justify="left", anchor="w", text=str(data[0]).split(" ")[0], width=120, font=("Calibri bold", 15)
         )
-        self._1.grid(row=0, column=1, sticky="s", pady=1, padx=0)
-        self._2 = CTkLabel(
+        self._2 = customtkinter.CTkLabel(
             master=self.temp, justify="left", anchor="w", text=str(data[1]).split(" ")[0], width=120, font=("Calibri ", 13)
         )
-        self._2.grid(row=0, column=2, sticky="s", pady=1, padx=0)
-        self._3 = CTkLabel(
+        self._3 = customtkinter.CTkLabel(
             master=self.temp, justify="left", anchor="w", text=str(data[2]).split(" ")[0], width=100, font=("Calibri ", 13)
         )
-        self._3.grid(row=0, column=3, sticky="s", pady=1, padx=0)
-        self._4 = CTkLabel(master=self.temp, text=str(data[3]).split(" ")[0], width=140, text_color='gray',  font=("Calibri ", 13))
-        self._4.grid(row=1, column=1, sticky="s", pady=1, padx=0)
-        self._5 = CTkLabel(master=self.temp, text=data[4], width=140, font=("Calibri ", 13))
-        self._5.grid(row=0, column=4, sticky="s", pady=1, padx=0)
-        self._6 = CTkLabel(master=self.temp, text=data[5], width=100, font=("Calibri ", 13))
-        self._6.grid(row=0, column=5, sticky="s", pady=1, padx=0)
-        self._7 = CTkLabel(master=self.temp, text=data[6], width=100, font=("Calibri ", 13))
-        self._7.grid(row=0, column=6, sticky="s", pady=1, padx=(0, 0))
+        self._4 = customtkinter.CTkLabel(master=self.temp, text="SRN:  "+ str(data[3]), width=140, text_color='gray',  font=("Calibri ", 13), anchor="w")
+        self._5 = customtkinter.CTkLabel(master=self.temp, text=data[4], width=140, font=("Calibri ", 13), anchor="w")
+        self._6 = customtkinter.CTkLabel(master=self.temp, text=data[5], width=100, font=("Calibri ", 13), anchor="w")
+        self._7 = customtkinter.CTkLabel(master=self.temp, text=data[6], width=100, font=("Calibri ", 13))
         self.temp.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
         self.temp.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
         self._1.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
@@ -502,7 +635,7 @@ class main_gui(CTk):
         self._6.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
         self._7.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
         
-        self.pdf_download_btn = CTkButton(
+        self.pdf_download_btn = customtkinter.CTkButton(
             master=self.temp,
             width=50, height=50,
             fg_color=btn_color,
@@ -513,9 +646,8 @@ class main_gui(CTk):
             image=self.download_logo,
             command=lambda: database.retrieve_pdf_file(srn_no=str(data[3])),
         )
-        self.pdf_download_btn.grid(row=0, column=7, rowspan=2, sticky="s", padx=2, pady=6)
         
-        self.pdf_upload_btn = CTkButton(
+        self.pdf_upload_btn = customtkinter.CTkButton(
             master=self.temp,
             width=50, height=50,
             text="",
@@ -526,36 +658,167 @@ class main_gui(CTk):
             fg_color="#ABDEF5",
             command=lambda: self.open_Pdf_file(srn=str(data[3])),
         )
-        self.pdf_upload_btn.grid(row=0, column=8, rowspan=2, sticky="s", padx=2, pady=6)
         
-        self.user_pic_label = CTkLabel(self.temp, text="",  
+        self.user_pic_label = customtkinter.CTkLabel(self.temp, text="",  
                                        width=50, height=50, corner_radius=5)
+        
+        self._tick.place(x=6, y=20)
+        self._tick.configure(
+            command=lambda tick=self._tick: self.select_click(data, tick)
+        )
+        self.ListofCheckBox.append(self._tick)
+        
+        self._1.grid(row=0, column=1, sticky="W", pady=1, padx=0)
+        self._2.grid(row=0, column=2, sticky="W", pady=1, padx=0)
+        self._3.grid(row=0, column=3, sticky="W", pady=1, padx=0)
+        self._4.grid(row=1, column=1, sticky="W", pady=1, padx=0, columnspan=2)
+        self._5.grid(row=0, column=4, sticky="W", pady=1, padx=0)
+        self._6.grid(row=0, column=5, sticky="W", pady=1, padx=0)
+        self._7.grid(row=0, column=6, sticky="W", pady=1, padx=(0, 0))
+        self.pdf_download_btn.grid(row=0, column=7, rowspan=2, sticky="s", padx=2, pady=6)
+        self.pdf_upload_btn.grid(row=0, column=8, rowspan=2, sticky="s", padx=2, pady=6)
         self.user_pic_label.grid(row=0, column=0, rowspan=2, pady=0.5, padx=25)
+        self.update_idletasks()
         threading.Thread(target=self.getPic, args=(self.user_pic_label, data)).start()
          
-        self.update_idletasks()
-
-        
-        
     def getPic(self, obj, data):
         img = database.show_images_from_db(str(data[3]),60,76,)
         obj.configure(image=img)
         
     def open_Pdf_file(self, srn):
-        # Create a new CTkFileDialog widget
+        # Create a new customtkinter.CTkFileDialog widget
         self.file_dialog = filedialog.askopenfilename(filetypes=[("pdf", "*.pdf")])
-
         try:
             database.insert_pdf_file(srn, self.file_dialog)
         except Exception as e:
             print(e)
-    
+ 
+    def search_question_paper(self):
+        self.list_of_question_paper = database.search_paper(
+                clas = self.questionClass.get(),
+                session= self.questionSession.get(),
+                term = self.questionTerm.get(),
+                subjects = self.questionSubject.get()
+            )
+        self.create_record_question(self.list_of_question_paper)
+      
+    def create_record_question(self, data_list):
+            self.clear_frame()
+            if len(data_list) > 0:
+                for data in data_list:
+                    self.make_record_frame_question(data=data) 
+                    
+           
+    def make_record_frame_question(self, data):
+                
+        self.temp = customtkinter.CTkFrame(
+            self.scroll_frame,
+            corner_radius=0,
+            border_color="#D9D9D9",
+            border_width=0.4,
+            bg_color="white",
+            fg_color="white",
+        )
+        self.temp.pack(padx=5, pady=0, fill='both')
+        
+        customtkinter.CTkLabel(self.temp, text=" ", image = self.pdf_logo).pack(padx=20, side='left')
+        self.clas_label0 = customtkinter.CTkLabel(self.temp, text = data[0]+" - ")
+        self.clas_label0.pack(padx = 2, pady=0, side='left')
+        
+        self.clas_label1= customtkinter.CTkLabel(self.temp, text = data[1])
+        
+        self.clas_label2 = customtkinter.CTkLabel(self.temp, text = data[2]+"  Term")
+        
+        self.clas_label3 = customtkinter.CTkLabel(self.temp, text = data[3])
+        self.clas_label3.pack(padx = 2, pady=0, side='left')
+        self.clas_label2.pack(padx = 2, pady=0, side='left')
+                
+        self.ques_pdf_delete_btn = customtkinter.CTkButton(self.temp, text="", fg_color = "red",hover_color='darkred', image=self.delete_logo, width=40, command=lambda: database.delete_pdf_question((data)))
+        self.ques_pdf_delete_btn.pack(padx = 20, pady=10, side='right')
+        
+        self.ques_pdf_save_btn = customtkinter.CTkButton(self.temp, text="Save",fg_color=btn_color, width=60, text_color='white', command=lambda: database.save_as_pdf_question((data)))
+        self.ques_pdf_save_btn.pack(padx = 20, pady=10, side='right')
+        
+        self.temp.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.temp.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        
+        self.clas_label1.pack(padx = 20, pady=10, side='right')
+        self.clas_label0.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.clas_label0.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self.clas_label1.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.clas_label1.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self.clas_label2.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.clas_label2.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self.clas_label3.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.clas_label3.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        
+        
+    def open_question_paper_file(self, c=None, s=None, t=None, subject=None):
+        c = self.questionClass.get()
+        s = self.questionSession.get()
+        t = self.questionTerm.get()
+        subject = self.questionSubject.get()
+        
+        if c == "" or s == "" or t == "":
+            database.rise_error()
+            return
+        # Create a new customtkinter.CTkFileDialog widget
+        self.file_dialog = filedialog.askopenfilename(filetypes=[("pdf", "*.pdf")])
+        try:
+            database.insert_question_paper_file(c, s, t, subject, self.file_dialog)
+        except Exception as e:
+            print(e)
+            
+    def open_settings_window(self):
+        self.settings_window = customtkinter.CTkToplevel()
+        self.settings_window.grab_set()
+        self.settings_window.title("Settings")
+        self.settings_window.geometry("250x150")  # Adjust window size as needed
+
+        self.dpi_label = customtkinter.CTkLabel(
+            master=self.settings_window, text="Font DPI Scale:"
+        )
+        self.dpi_label.pack()
+
+        self.dpi_entry = customtkinter.CTkEntry(
+            master=self.settings_window, justify="center"
+        )
+        self.dpi_entry.insert(0, str(dpi_value))  # Set initial value
+        self.dpi_entry.pack()
+
+        def save_and_reload():
+            global dpi_value
+            try:
+                new_dpi_value = int(self.dpi_entry.get())
+                if new_dpi_value > 0:
+                    dpi_value = new_dpi_value
+                    with open(resource_path("dpi_settings.json"), "w") as f:
+                        json.dump({"dpi": dpi_value}, f)
+
+                    customtkinter.set_widget_scaling(dpi_value / 96)
+                    root.update()  # Reapply font scaling to main window
+                    self.settings_window.destroy()
+                else:
+                    customtkinter.CTkMessageBox.show_error(
+                        "Invalid DPI", "Please enter a positive DPI value."
+                    )
+            except ValueError:
+                customtkinter.CTkMessageBox.show_error(
+                    "Invalid Input", "Please enter a valid integer value."
+                )
+        self.save_button = customtkinter.CTkButton(
+        master=self.settings_window, text="Save and Reload", command=save_and_reload)
+        self.save_button.pack()
+        
+
+
+   
 def main_program():
     root = main_gui()
     
     root.mainloop()
     
-class SplashScreen(CTk):
+class SplashScreen(customtkinter.CTk):
     def __init__(self, i):
         super().__init__()
         self.overrideredirect(1)
@@ -574,7 +837,7 @@ class SplashScreen(CTk):
         # Set window position
         self.geometry("+{}+{}".format(x_position, y_position))
         self.splashLogo = createImage(resource_path(f"icons/{i}.png"), 200,200)
-        label = CTkLabel(self,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
+        label = customtkinter.CTkLabel(self,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
         label.pack(pady=50)
        
 def destroy():
@@ -582,13 +845,23 @@ def destroy():
         root.loading.set((i/100)*4)
         root.update_idletasks()
     root.logoframe.destroy()
+    root.create_dashboard_window()
     
 def loading_and_destory():
     import mysql_conn as database
           
         
 if __name__ == "__main__":
+    
     try:
+        with open(resource_path("dpi_settings.json"), "r") as f:
+            dpi_settings = json.load(f)
+            dpi_value = dpi_settings.get("dpi", 96)  # Default to 96 if not found
+    except FileNotFoundError:
+        dpi_value = 96
+        
+    try:
+        customtkinter.set_widget_scaling(dpi_value / 96)
         root = main_gui()
         root.after(500, loading_and_destory)
         root.after(2000, destroy)

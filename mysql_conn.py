@@ -152,7 +152,7 @@ def insert_into_marks2(self, srn, data):
     
     
     try:
-        print(data)
+        
         data = (
             srn,
             data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], 
@@ -361,7 +361,6 @@ def insert_into_maximum(self, srn, data):
         messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
         return 0
 
-
 def insert(self):
     if not self.entryofName.get():
         messagebox.showwarning("Requirements", "Name* must be filled ")
@@ -408,7 +407,6 @@ def insert(self):
                 f"Photo of student SRN NO:- {self.entryofSRN_no.get()} is Uploaded Successfully",
             )
 
-
 def search_students(
     name=None, srn_no=None, pen_no=None, admission_no=None, father_name=None, clas=None, session = None, roll = None
 ):
@@ -442,8 +440,34 @@ def search_students(
     except:
         cursor.execute("SELECT * FROM students")
         results = cursor.fetchall()
-        return results
+        return results  
     
+def search_paper(
+    clas=None, session = None, term = None , subjects = None
+):
+    
+    query = "SELECT class, session, term, subjects FROM question_paper_table WHERE "
+    conditions = []
+    if clas:
+        conditions.append(f"class LIKE '%{clas}%'")
+    if session:
+        conditions.append(f"session LIKE '%{session}%'")
+    if term:
+        conditions.append(f"term LIKE '%{term}%'")
+    if subjects:
+        conditions.append(f"subjects LIKE '%{subjects}%'")
+    if conditions:
+        query += " " + " AND ".join(conditions)
+
+    try:
+        
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return results
+    except:
+        cursor.execute("SELECT class, session, term FROM question_paper_table")
+        results = cursor.fetchall()
+        return results  
     
 def get_first_term_marks(srn_no):
     query = f"SELECT * FROM marks1 WHERE id = {srn_no}"
@@ -478,22 +502,7 @@ def get_max_term_marks(srn_no):
     except:
         return 0
 
-
 def insert_student(name, father_name, mother_name, srn_no, pen_no, admission_no, clas, session, roll):
-    # Insert data into the "students" table
-    # insert_query = "INSERT INTO students (name, father_name, mother_name, srn_no, pen_no, admission_no, class, session, roll) " \
-                # #    "VALUES (%(name)s, %(father_name)s, %(mother_name)s, %(srn_no)s, %(pen_no)s, %(admission_no)s, %(class)s, %(session)s, %(roll)s)"
-    # cursor.execute(insert_query, student_data)
-    # connection.commit()
-    
-    
-    
-    
-    
-    
-    
-    
-    
     try:
         cursor.execute(
             """
@@ -528,7 +537,6 @@ def insert_student(name, father_name, mother_name, srn_no, pen_no, admission_no,
         messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
         return 0
 
-
 def update_student(name, father_name, mother_name, srn_no, pen_no, admission_no, clas, session, roll):
     try:
         cursor.execute(
@@ -561,6 +569,42 @@ def update_student(name, father_name, mother_name, srn_no, pen_no, admission_no,
         messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
         return 0
     
+def insert_question_paper_file(c, s ,t, sub , pdf_path):
+    try:
+        with open(pdf_path, "rb") as pdf_file:
+            pdf_data = pdf_file.read()
+
+            # Check if the record with c, s ,t  already exists
+            cursor.execute("SELECT COUNT(*) FROM question_paper_table WHERE class = %s and session = %s and term = %s and subjects = %s", (c, s, t, sub))
+            record_count = cursor.fetchone()[0]
+
+            if record_count == 0:
+                # Insert a new record
+                cursor.execute(
+                    """
+                    INSERT INTO question_paper_table (class, session, term, subjects, pdf_paper)
+                    VALUES (%s, %s, %s, %s, %s)
+                """,
+                    (c, s, t, sub, pdf_data),
+                )
+                messagebox.showinfo("Pdf Status", "Pdf File Uploaded Successfully.")
+            else:
+                # Update existing record
+                cursor.execute(
+                    """
+                    UPDATE question_paper_table SET pdf_paper=%s WHERE class = %s and session = %s and term = %s and subjects = %s     
+                    """,
+                    (pdf_data, c, s, t, sub),
+                )
+                messagebox.showinfo("Pdf Status", "Pdf File Updated.")
+
+            # Commit the changes
+            conn.commit()
+
+
+    except Exception as e:
+            messagebox.showerror("Error in pdf Upload", f"{e}")
+            
 def insert_pdf_file(srn_no, pdf_path):
     try:
         with open(pdf_path, "rb") as pdf_file:
@@ -592,11 +636,9 @@ def insert_pdf_file(srn_no, pdf_path):
 
             # Commit the changes
             conn.commit()
-
             
     except e:
             messagebox.showerror("Error in pdf Upload", f"{e}")
-
 
 def deleteStudent(srn):
     action = messagebox.askyesno(
@@ -648,10 +690,7 @@ def deleteStudent(srn):
             
         except Exception as e:
             messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
-            
-        
-
-
+ 
 def retrieve_pdf_file(srn_no):
     cursor.execute("SELECT pdf_data FROM pdf_files WHERE srn_no = ?", (srn_no,))
     result = cursor.fetchone()
@@ -664,12 +703,38 @@ def retrieve_pdf_file(srn_no):
         messagebox.showinfo("", "PDF Saved Successfully")
     else:
         return None
+    
+def save_as_pdf_question(data):
+    cursor.execute("SELECT pdf_paper FROM question_paper_table WHERE class= ? and session = ?  and term = ?  and subjects = ? ", (data[0], data[1], data[2], data[3],))
+    result = cursor.fetchone()
+    if result:
+        pdfSavePath = filedialog.asksaveasfilename(
+            defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")]
+        )
+        pdf_data = result[0]
+        create_pdf_from_binary(pdf_data, pdfSavePath)
+        messagebox.showinfo("", "PDF Saved Successfully")
+    else:
+        return None
+    
+def delete_pdf_question(data):
+    action = messagebox.askyesno(
+        "Permission Required",
+        f"You are trying to delete question paper. Are you sure ?",
+    )
+    if action:
 
+        try:
+            cursor.execute("DELETE FROM question_paper_table WHERE class= ? and session = ?  and term = ?  and subjects = ? ", (data[0], data[1], data[2], data[3],))
+            conn.commit()
+            messagebox.showinfo("", "PDF Delete Successfully")
+        except Exception as e:
+            messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
+    
 
 def create_pdf_from_binary(pdf_data, output_path="output.pdf"):
     with open(output_path, "wb") as pdf_file:
         pdf_file.write(pdf_data)
-
 
 def getStudentsList():
     # conn = connect(resource_path("database/student_database.db"))
@@ -741,6 +806,16 @@ def promote(srn, class_list, trigger, btn):
             )
         except Exception as e:
             messagebox.showerror("Database Error",f"{e}")
+                    
+def count_students(table_name):
+    try:
+        # Count the number of students in the specified table
+        cursor.execute(f'SELECT COUNT(*) FROM {table_name}')
+        count = cursor.fetchone()[0]
+        return count
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def replace_text_in_docx(input_docx_path, replacements):
     pythoncom.CoInitialize()
@@ -771,6 +846,8 @@ def replace_text_in_docx(input_docx_path, replacements):
     messagebox.showinfo('Certificate Generated', f'Certificate generated successfully!')
     pythoncom.CoUninitialize()
 
+def rise_error():
+    messagebox.showinfo("", "Please select Class, Session, Term, Subject")
 
 if __name__ == "__main__":
     pass

@@ -473,7 +473,7 @@ class modifyDetails(CTkFrame):
         self.drawing_first_label = CTkLabel(master=self.first_term_frame, text="Drawing")
         self.drawing_first_label.grid(row=0, column=6, padx=10, pady=(8,0)) 
         
-        self.general_first_label = CTkLabel(master=self.first_term_frame, text="General")
+        self.general_first_label = CTkLabel(master=self.first_term_frame, text="GK")
         self.general_first_label.grid(row=2, column=0, padx=10, pady=(8,0)) 
         
         self.grand_first_label = CTkLabel(master=self.first_term_frame, text="Grand Total")
@@ -561,7 +561,7 @@ class modifyDetails(CTkFrame):
         self.drawing_second_label = CTkLabel(master=self.second_term_frame, text="Drawing")
         self.drawing_second_label.grid(row=0, column=6, padx=10, pady=(8,0)) 
         
-        self.general_second_label = CTkLabel(master=self.second_term_frame, text="General")
+        self.general_second_label = CTkLabel(master=self.second_term_frame, text="GK")
         self.general_second_label.grid(row=2, column=0, padx=10, pady=(8,0)) 
         
         self.grand_second_label = CTkLabel(master=self.second_term_frame, text="Grand Total")
@@ -648,7 +648,7 @@ class modifyDetails(CTkFrame):
         self.drawing_third_label = CTkLabel(master=self.third_term_frame, text="Drawing")
         self.drawing_third_label.grid(row=0, column=6, padx=10, pady=(8,0)) 
         
-        self.general_third_label = CTkLabel(master=self.third_term_frame, text="General")
+        self.general_third_label = CTkLabel(master=self.third_term_frame, text="GK")
         self.general_third_label.grid(row=2, column=0, padx=10, pady=(8,0)) 
         
         self.grand_third_label = CTkLabel(master=self.third_term_frame, text="Grand Total")
@@ -735,7 +735,7 @@ class modifyDetails(CTkFrame):
         self.drawing_max_label = CTkLabel(master=self.max_term_frame, text="Drawing")
         self.drawing_max_label.grid(row=0, column=6, padx=10, pady=(8,0)) 
         
-        self.general_max_label = CTkLabel(master=self.max_term_frame, text="General")
+        self.general_max_label = CTkLabel(master=self.max_term_frame, text="GK")
         self.general_max_label.grid(row=2, column=0, padx=10, pady=(8,0)) 
         
         self.grand_max_label = CTkLabel(master=self.max_term_frame, text="Grand Total")
