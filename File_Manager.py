@@ -6,9 +6,12 @@ from PIL import Image
 import threading
 from open_details import *
 import json
+from datetime import datetime
 
 hovercolor = "#579BE3"
 btn_color = "#098FF0"
+
+current_year = datetime.now().year
 
 def resource_path(relative_path):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -90,18 +93,19 @@ class main_gui(customtkinter.CTk):
         self.logoframe.pack_propagate(False)
         self.splashLogo = createImage(resource_path("icons/1.png"), 200,200)
         self.spalsh = customtkinter.CTkLabel(self.logoframe,text="", image=self.splashLogo, height=300, width=300, corner_radius=50)
-        self.spalsh.pack()
+        self.spalsh.pack(pady=(100, 10))
         
         self.loading = customtkinter.CTkProgressBar(self.logoframe, width=300,)
         self.loading.pack()
         self.loading.set(0)
-        
+        customtkinter.CTkLabel(self.logoframe, text="Connecting to database ...").pack(pady=5)
       
     def serach_thread(self):
-        self.searchBtn.configure(state='disabled')
-        process1 = threading.Thread(target=self.search_students)
-        if not process1.is_alive():
-            process1.start()
+        # self.searchBtn.configure(state='disabled')
+        self.process1 = threading.Thread(target=self.search_students)
+        if not self.process1.is_alive():
+            self.process1.start()
+        
      
     def create_dashboard_window(self):
         self.right_frame.destroy()
@@ -112,7 +116,7 @@ class main_gui(customtkinter.CTk):
         # ========= database values to get =============
         self.s_total = str(database.count_students("students"))
         self.p_total = str(database.count_students("pdf_files"))
-        
+        self.no_of_students_classwise = database.get_students_count_by_class(str(current_year) +" - "+ str(current_year+1))
         
         self.top_title = customtkinter.CTkLabel(self.right_frame, text='Dashboard',font=("Calibri ", 30))
         self.top_title.pack(anchor = customtkinter.W, ipadx=20, padx=20, pady=(30,0))
@@ -143,16 +147,17 @@ class main_gui(customtkinter.CTk):
         customtkinter.CTkLabel(self.total_document_frame, text="PDF File", text_color="gray",font=("Calibri bold", 15)).place(x=10, y=2)
         
         # graph
-        self.graph_frame = customtkinter.CTkFrame(self.right_frame, width=720, height=300, corner_radius=10, fg_color='white')
-        self.graph_frame.pack(anchor = customtkinter.W, padx=40, pady=10)
+        self.graph_frame = customtkinter.CTkFrame(self.right_frame, width=720, height=300, corner_radius=5, fg_color='white')
         self.graph_frame.pack_propagate(False)
+        self.graph_frame.pack(anchor = customtkinter.W, padx=40, pady=10, ipadx=20)
         
-        for i in range(len(self.class_name_list)):
-            customtkinter.CTkFrame(self.graph_frame, width=40, height=random.randint(120, 200), fg_color="#6ac5fe").grid(row = 0, column= i, padx=5,pady=5, sticky="S")
+        for i in range(len(self.no_of_students_classwise)):
+            customtkinter.CTkFrame(self.graph_frame, width=40, height=self.no_of_students_classwise[i][1]*3, fg_color="#6ac5fe", corner_radius=1).grid(row = 0, column= i, padx=5, pady=(5,2), sticky="S")
             l = customtkinter.CTkLabel(self.graph_frame, width=40, text=str(self.class_name_list[i]))
             l.grid(row=3, column=i, padx=5,pady=5)
             l.grid_propagate(False)
-            # customtkinter.CTkFrame(self.graph_frame, width=40, height=random.randint(120, 200), fg_color="#6ac5fe").pack(side="left", padx=5,pady=15, anchor=customtkinter.S)
+            # customtkinter.CTkFrame(self.graph_frame, width=40, height=random.randint(120, 200), fg_color="#6ac5fe").pack(side="left", padx=5,pady=(15,2), anchor=customtkinter.S)
+        
         
         
               
@@ -569,9 +574,17 @@ class main_gui(customtkinter.CTk):
             session=self.searchSession.get().upper(),
             roll=self.searchRoll.get().upper(),
         )
-        self.create_record(self.list_of_student)
-        self.searchBtn.configure(state='normal')
+        # self.create_record(self.list_of_student)
         # print(self.list_of_student)
+        midpoint = len(self.list_of_student) // 2
+
+        # Split the list into two halves
+        self.first_half = self.list_of_student[:midpoint]
+        self.second_half = self.list_of_student[midpoint:]
+        
+        # craet mulit process for faster search
+        threading.Thread(target=self.create_record, args=(self.first_half,)).start()
+        threading.Thread(target=self.create_record, args=(self.second_half,)).start()
         
     def make_record_frame(self, data):
         self.temp = customtkinter.CTkFrame(
@@ -773,18 +786,18 @@ class main_gui(customtkinter.CTk):
         self.settings_window = customtkinter.CTkToplevel()
         self.settings_window.grab_set()
         self.settings_window.title("Settings")
-        self.settings_window.geometry("250x150")  # Adjust window size as needed
+        self.settings_window.geometry("300x150")  # Adjust window size as needed
 
         self.dpi_label = customtkinter.CTkLabel(
             master=self.settings_window, text="Font DPI Scale:"
         )
-        self.dpi_label.pack()
+        self.dpi_label.pack(anchor=customtkinter.N,padx=5, side="left")
 
         self.dpi_entry = customtkinter.CTkEntry(
             master=self.settings_window, justify="center"
         )
         self.dpi_entry.insert(0, str(dpi_value))  # Set initial value
-        self.dpi_entry.pack()
+        self.dpi_entry.pack(pady=10)
 
         def save_and_reload():
             global dpi_value
@@ -852,7 +865,6 @@ def loading_and_destory():
           
         
 if __name__ == "__main__":
-    
     try:
         with open(resource_path("dpi_settings.json"), "r") as f:
             dpi_settings = json.load(f)
@@ -864,7 +876,7 @@ if __name__ == "__main__":
         customtkinter.set_widget_scaling(dpi_value / 96)
         root = main_gui()
         root.after(500, loading_and_destory)
-        root.after(2000, destroy)
+        root.after(1000, destroy)
         root.mainloop()
 
     except Exception as e:

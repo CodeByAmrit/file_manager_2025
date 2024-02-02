@@ -1,9 +1,8 @@
 import mysql.connector
 from docx import Document
-from mysql.connector import IntegrityError
 from tkinter import messagebox, filedialog
 from PIL import ImageTk, Image
-import os, sys, io
+import os, sys
 import save_to_file as save
 import pythoncom
 
@@ -12,7 +11,9 @@ def resource_path(relative_path):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
+# Global variable to store the original image data
 file_path = resource_path("output.txt")
+current_image_data = b""
 
 def connect():
     host, port = save.read_from_file(file_path)
@@ -35,11 +36,11 @@ except mysql.connector.Error as err:
 except Exception as e:
     messagebox.showwarning("Error",f"{e}")
 
+cursor = conn.cursor(prepared=True)
+
 def resource_path(relative_path):
     base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
-
-cursor = conn.cursor(prepared=True)
 
 def insert_into_marks1(self, srn, data):
     if not self.english_first_entry.get():
@@ -731,7 +732,6 @@ def delete_pdf_question(data):
         except Exception as e:
             messagebox.showwarning(f"Database Error", f"SQLite error: {e}\n")
     
-
 def create_pdf_from_binary(pdf_data, output_path="output.pdf"):
     with open(output_path, "wb") as pdf_file:
         pdf_file.write(pdf_data)
@@ -742,9 +742,6 @@ def getStudentsList():
     cursor.execute("SELECT * FROM students")
     student = cursor.fetchall()
     return student
-
-# Global variable to store the original image data
-current_image_data = b""
 
 def save_image():
     global current_image_data
@@ -849,6 +846,16 @@ def replace_text_in_docx(input_docx_path, replacements):
 def rise_error():
     messagebox.showinfo("", "Please select Class, Session, Term, Subject")
 
+def get_students_count_by_class(session):
+    # Assuming 'session' is the current session
+    query = f"SELECT class, COUNT(*) FROM students WHERE session = ? GROUP BY class"
+    cursor.execute(query, (session,))
+    result = cursor.fetchall()
+    return result
+
 if __name__ == "__main__":
-    pass
-            
+    
+
+    
+    result = get_students_count_by_class("2024 - 2025")
+    print(result)
