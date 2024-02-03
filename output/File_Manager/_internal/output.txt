@@ -1,2 +1,2 @@
-Input 1: 0.tcp.in.ngrok.io
-Input 2: 19480
+Input 1: localhost
+Input 2: 3306

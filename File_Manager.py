@@ -59,6 +59,8 @@ class main_gui(customtkinter.CTk):
         self.pdf_logo = createImage(resource_path("icons/pdf-file.png"), 25, 25)
         self.delete_logo = createImage(resource_path("icons/trash.png"), 25, 25)
         self.excel_logo = createImage(resource_path("icons/xls.png"), 24, 24)
+        self.inc_image = createImage(resource_path('icons/increase.png'), 22, 22)
+        self.inc_image2= createImage(resource_path('icons/decrease.png'), 22, 22)
         
         self.left_frame = customtkinter.CTkFrame(self, fg_color='#F9F9F9')
         self.left_frame.pack(side='left', fill='both')
@@ -102,11 +104,10 @@ class main_gui(customtkinter.CTk):
         customtkinter.CTkLabel(self.logoframe, text="Connecting to database ...").pack(pady=5)
       
     def serach_thread(self):
-        # self.searchBtn.configure(state='disabled')
-        self.process1 = threading.Thread(target=self.search_students)
-        if not self.process1.is_alive():
-            self.process1.start()
-        
+        # self.process1 = threading.Thread(target=self.search_students)
+        # if not self.process1.is_alive():
+        #     self.process1.start()
+        self.search_students()
      
     def create_dashboard_window(self):
         self.right_frame.destroy()
@@ -355,6 +356,12 @@ class main_gui(customtkinter.CTk):
         )
         self.searchBtn.grid(row=3, column=2, sticky="w", padx=10, pady=(0, 20))
         
+        self.switch_photo = customtkinter.CTkSwitch(
+            self.TopFrame,
+            text="Show Photo"
+        )
+        self.switch_photo.grid(row=3, column=3, sticky="w", padx=10, pady=(0, 20))
+        
         self.excelBtn = customtkinter.CTkButton(
             self.TopFrame,
             text="",
@@ -367,26 +374,19 @@ class main_gui(customtkinter.CTk):
         )
         self.excelBtn.grid(row=3, column=5, sticky="e", padx=10, pady=(0, 20))
 
-        path = resource_path('icons/increase.png')
-        inc_image = customtkinter.CTkImage(
-            light_image=Image.open(path), dark_image=Image.open(path), size=(22, 22)
-        )
+        
         # promtote btn
         self.class_promote_btn = customtkinter.CTkButton(
             self.TopFrame,
             text="Promote",
             text_color='white',
             width=20,
-            image=inc_image,
+            image=self.inc_image,
             fg_color=btn_color,
             command=lambda: database.promote(self.list_of_selected_student, self.class_name_list, 1, self)
         )
         self.class_promote_btn.grid(row=3, column=4, sticky="w", padx=10, pady=(0, 20))
         
-        path2= resource_path('icons/decrease.png')
-        inc_image2 = customtkinter.CTkImage(
-            light_image=Image.open(path2), dark_image=Image.open(path2), size=(22, 22)
-        )
         
         # demote btn
         self.class_demote = customtkinter.CTkButton(
@@ -394,7 +394,7 @@ class main_gui(customtkinter.CTk):
             text="Demote",
             text_color='white',
             width=20,
-            image=inc_image2,
+            image=self.inc_image2,
             fg_color=btn_color,
             command=lambda: database.promote(self.list_of_selected_student, self.class_name_list, -1, self)
         )
@@ -566,10 +566,14 @@ class main_gui(customtkinter.CTk):
     
     def create_record(self, data_list):
         self.clear_frame()
-        if len(data_list) > 0:
-            for data in data_list:
-                self.make_record_frame(data=data)
-                
+        if len(data_list) > 0: 
+            if self.switch_photo.get() == 1:
+                for data in data_list:
+                    self.make_record_frame(data=data)
+            else:
+                for data in data_list:
+                    self.make_record_frame_simple(data=data)
+                    
     def clear_frame(self):
         children = self.scroll_frame.winfo_children()
         for widget in children:
@@ -589,8 +593,6 @@ class main_gui(customtkinter.CTk):
             excel=True,
         )
         
-        
-        
     def search_students(self):
         self.list_of_selected_student.clear()
         self.list_of_student = database.search_students(
@@ -603,17 +605,90 @@ class main_gui(customtkinter.CTk):
             session=self.searchSession.get().upper(),
             roll=self.searchRoll.get().upper(),
         )
-        # self.create_record(self.list_of_student)
-        # print(self.list_of_student)
-        midpoint = len(self.list_of_student) // 2
-
-        # Split the list into two halves
-        self.first_half = self.list_of_student[:midpoint]
-        self.second_half = self.list_of_student[midpoint:]
+        self.create_record(self.list_of_student)
         
-        # craet mulit process for faster search
-        threading.Thread(target=self.create_record, args=(self.first_half,)).start()
-        threading.Thread(target=self.create_record, args=(self.second_half,)).start()
+    def make_record_frame_simple(self, data):
+        self.temp = customtkinter.CTkFrame(
+            self.scroll_frame,
+            corner_radius=0,
+            border_color="#D9D9D9",
+            border_width=0.4,
+            fg_color="white",
+            height=40,
+        )
+
+        self._tick = customtkinter.CTkCheckBox(
+            master=self.temp,
+            width=20,
+            text="",
+            checkbox_height=15,
+            checkbox_width=15,
+            corner_radius=3,
+            border_width=0.5,
+        )
+        self._1 = customtkinter.CTkLabel(
+            master=self.temp, justify="left", anchor="w", text=str(data[0]).split(" ")[0], width=120, font=("Calibri bold", 15)
+        )
+        self._2 = customtkinter.CTkLabel(
+            master=self.temp, justify="left", anchor="w", text=str(data[1]).split(" ")[0], width=120, font=("Calibri ", 13)
+        )
+        self._3 = customtkinter.CTkLabel(
+            master=self.temp, justify="left", anchor="w", text=str(data[2]).split(" ")[0], width=100, font=("Calibri ", 13)
+        )
+        self._4 = customtkinter.CTkLabel(master=self.temp, text=data[3], width=140, text_color='gray',  font=("Calibri ", 13), anchor="w")
+        self._5 = customtkinter.CTkLabel(master=self.temp, text=data[4], width=100, font=("Calibri ", 13), anchor="w")
+        self._6 = customtkinter.CTkLabel(master=self.temp, text=data[5], width=100, font=("Calibri ", 13), anchor="w")
+        self._7 = customtkinter.CTkLabel(master=self.temp, text=data[6], width=100, font=("Calibri ", 13))
+        self.temp.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self.temp.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._1.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._1.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._2.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._2.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._3.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._3.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._4.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._4.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._5.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._5.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._6.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._6.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+        self._7.bind("<Enter>", lambda event, obj=self.temp: self.on_enter(obj))
+        self._7.bind("<Leave>", lambda event, obj=self.temp: self.on_leave(obj))
+    
+        self.temp.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._1.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._2.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._3.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._4.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._5.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._6.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        self._7.bind("<Double-Button-1>", lambda event: modify_record(self, data_list=data))
+        
+        self.pdf_download_btn = customtkinter.CTkButton(
+            master=self.temp,
+            fg_color=btn_color,
+            text="Save PDF",
+            text_color='white',
+            font=("calibri bold", 16),
+            command=lambda: database.retrieve_pdf_file(srn_no=str(data[3])),
+        )
+        
+        
+        self._tick.place(x=6, y=10)
+        self._tick.configure(
+            command=lambda tick=self._tick: self.select_click(data, tick)
+        )
+        self.ListofCheckBox.append(self._tick)
+        self.temp.pack(padx=10, pady=0, ipady=4, fill='both')
+        self._1.pack(side="left", pady=1, padx=(40,0))
+        self._2.pack(side="left", pady=1, padx=0)
+        self._3.pack(side="left", pady=1, padx=0)
+        self._4.pack(side="left", pady=1, padx=0)
+        self._5.pack(side="left", pady=1, padx=0)
+        self._6.pack(side="left", pady=1, padx=0)
+        self._7.pack(side="left", pady=1, padx=(0, 0))
+        self.pdf_download_btn.pack(side="left",  padx=2, pady=3)
         
     def make_record_frame(self, data):
         self.temp = customtkinter.CTkFrame(
