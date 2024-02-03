@@ -5,6 +5,8 @@ from PIL import ImageTk, Image
 import os, sys
 import save_to_file as save
 import pythoncom
+import pandas as pd
+# import subprocess
 
 
 def resource_path(relative_path):
@@ -852,6 +854,51 @@ def get_students_count_by_class(session):
     cursor.execute(query, (session,))
     result = cursor.fetchall()
     return result
+
+def export_excel_sheet(
+    name=None, srn_no=None, pen_no=None, admission_no=None, father_name=None, clas=None, session = None, roll = None, excel=False
+):
+    
+    query = "SELECT * FROM students WHERE "
+    conditions = []
+    if name:
+        conditions.append(f"name = '{name}'")
+    if srn_no:
+        conditions.append(f"srn_no = '{srn_no}'")
+    if pen_no:
+        conditions.append(f"pen_no = '{pen_no}'")
+    if admission_no:
+        conditions.append(f"admission_no = '{admission_no}'")
+    if father_name:
+        conditions.append(f"father_name = '{father_name}'")
+    if clas:
+        conditions.append(f"class = '{clas}'")
+    if session:
+        conditions.append(f"session = '{session}'")
+    if roll:
+        conditions.append(f"roll = '{roll}'")
+    if conditions:
+        query += " " + " AND ".join(conditions)
+
+    file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                filetypes=[("Excel files", "*.xlsx")],
+                                                title="Save Excel File As")
+    try:
+        df = pd.read_sql(query, conn)
+        # Save the DataFrame to an Excel file
+        df.to_excel(file_path, index=False)
+        messagebox.showinfo("Export Data","Data Exported in excel file successfully")
+        # Open Windows Explorer at the location of the Excel file
+        # subprocess.Popen(['explorer', '/select,', file_path])
+            
+    except:
+        df = pd.read_sql("select * from students", conn)
+        # Save the DataFrame to an Excel file
+        df.to_excel(file_path, index=False)
+        print(f'Data exported to {file_path}')
+        messagebox.showinfo("Export Data","Data Exported in excel file successfully")
+        # Open Windows Explorer at the location of the Excel file
+        # subprocess.Popen(['explorer', file_path,])
 
 if __name__ == "__main__":
     

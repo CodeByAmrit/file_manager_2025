@@ -58,6 +58,7 @@ class main_gui(customtkinter.CTk):
         self.upload_logo = createImage(resource_path("icons/upload.png"), 24, 24)
         self.pdf_logo = createImage(resource_path("icons/pdf-file.png"), 25, 25)
         self.delete_logo = createImage(resource_path("icons/trash.png"), 25, 25)
+        self.excel_logo = createImage(resource_path("icons/xls.png"), 24, 24)
         
         self.left_frame = customtkinter.CTkFrame(self, fg_color='#F9F9F9')
         self.left_frame.pack(side='left', fill='both')
@@ -353,6 +354,18 @@ class main_gui(customtkinter.CTk):
             command=self.serach_thread
         )
         self.searchBtn.grid(row=3, column=2, sticky="w", padx=10, pady=(0, 20))
+        
+        self.excelBtn = customtkinter.CTkButton(
+            self.TopFrame,
+            text="",
+            width=30,
+            height=30,
+            fg_color="white",
+            hover_color="lightgray",
+            image=self.excel_logo,
+            command=self.export_excel_file
+        )
+        self.excelBtn.grid(row=3, column=5, sticky="e", padx=10, pady=(0, 20))
 
         path = resource_path('icons/increase.png')
         inc_image = customtkinter.CTkImage(
@@ -562,6 +575,22 @@ class main_gui(customtkinter.CTk):
         for widget in children:
             widget.destroy()
 
+    def export_excel_file(self):
+        self.list_of_selected_student.clear()
+        self.list_of_student = database.export_excel_sheet(
+            name=self.searchName.get(),
+            father_name=self.searchFather.get().upper(),
+            clas=self.searchClass.get().upper(),
+            srn_no=self.searchSRN_No.get().upper(),
+            pen_no=self.searchPEN_No.get().upper(),
+            admission_no=self.searchAdmission.get().upper(),
+            session=self.searchSession.get().upper(),
+            roll=self.searchRoll.get().upper(),
+            excel=True,
+        )
+        
+        
+        
     def search_students(self):
         self.list_of_selected_student.clear()
         self.list_of_student = database.search_students(
