@@ -7,6 +7,7 @@ from open_details import *
 import json
 from datetime import datetime
 
+# pip install -r requirements.txt   ---- run this command to install all dependent librariess
 hovercolor = "#579BE3"
 btn_color = "#098FF0"
 
