@@ -1,6 +1,5 @@
-import sys, os, random
+import sys, os
 from tkinter import ttk
-from tkinter.ttk import OptionMenu
 import customtkinter 
 from PIL import Image
 import threading

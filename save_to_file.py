@@ -1,6 +1,4 @@
 import customtkinter as tk
-from tkinter import filedialog
-import os
 from File_Manager import resource_path
 
 def read_from_file(file_path):
