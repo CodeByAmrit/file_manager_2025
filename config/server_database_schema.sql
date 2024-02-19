@@ -1,4 +1,4 @@
-drop database bvm; 
+
 CREATE database bvm;
 use bvm;
 CREATE TABLE IF NOT EXISTS students (        

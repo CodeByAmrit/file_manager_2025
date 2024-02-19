@@ -1,5 +1,4 @@
 import sys, os
-from tkinter import ttk
 import customtkinter 
 from PIL import Image
 import threading
@@ -528,36 +527,16 @@ class main_gui(customtkinter.CTk):
     
     def customInput(self, frame):
         # Create a custom style for the round-cornered Entry
-        style = ttk.Style()
-        style.configure(
-            "Round.TEntry",
-            padding=10,
-            borderwidth=5,
-            relief="flat",
-            background="#f0f0f0",
-            bordercolor="#20A1FF",
-            focuscolor="none",
-        )
-        inputEntry = ttk.Entry(
-            frame, style="Round.TEntry", font=("Verdana", 12), takefocus=True
+        inputEntry = CTkEntry(
+            frame, font=("Verdana", 12), border_width=1, border_color="gray",bg_color="#f0f0f0",
         )
         self.List_of_Entry.append(inputEntry)
         return inputEntry
      
     def customInput2(self, frame):
         # Create a custom style for the round-cornered Entry
-        style = ttk.Style()
-        style.configure(
-            "Round.TEntry",
-            padding=10,
-            borderwidth=5,
-            relief="flat",
-            background="#f0f0f0",
-            bordercolor="#20A1FF",
-            focuscolor="none",
-        )
-        inputEntry = ttk.Entry(
-            frame, style="Round.TEntry", font=("Verdana", 12), takefocus=True
+        inputEntry = CTkEntry(
+            frame, font=("Verdana", 12), border_width=1, border_color="gray",bg_color="#f0f0f0",
         )
         self.List_of_Entry.append(inputEntry)
         
