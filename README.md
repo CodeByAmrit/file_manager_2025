@@ -1,44 +1,42 @@
-# File Manager 2025
+# Student Data Management System
 
-Description of the project.
+The Student Data Management System is a Python-based desktop application GUI designed for efficiently managing student data. It provides a user-friendly interface for storing and managing various student details such as name, roll number, SRN (Student Registration Number), and other personal documents like parent documents in PDF format. Additionally, the application allows users to save academic details for students for three terms - first, second, and final terms.
 
-## Table of Contents
+## Features
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [File Structure](#file-structure)
-- [Dependencies](#dependencies)
-- [Output](#output)
-- [Contributing](#contributing)
-- [License](#license)
+- **Student Data Storage**: Easily store and manage student details including name, roll number, SRN, and parent documents in PDF format.
+- **Academic Details**: Record and manage academic details for students for three terms - first, second, and final terms.
+- **Certificate Creation**: Generate certificates using a document Word file as a template for various purposes.
+- **Modern GUI Design**: The GUI is created using Tkinter with a modern design approach, providing easy user interactions and a pleasant user experience.
+
+## Usage
+
+1. **Student Data Entry**: Enter and save student details including personal information and academic details.
+2. **PDF Document Management**: Upload and manage PDF documents such as parent documents.
+3. **Academic Record Management**: Record and manage academic details for students for different terms.
+4. **Certificate Generation**: Generate certificates using a document Word file as a template.
+
+## Technologies Used
+
+- Python
+- customtkinter (for GUI)
+- MySQL (for database management)
 
 ## Installation
 
-Describe how to install and set up the project, including any dependencies.
+1. Clone the repository:
 
-```bash
-pip install -r requirements.txt
+   ```bash
+   git clone https://github.com/CodeByAmrit/file_manager_2025.git
+2. Install dependencies:
 
-**Usage**
-Provide examples and instructions for using your project.
+   ```bash
+   pip install -r requirements.txt
+3. Run the application:
 
-bash
-Copy code
-python File_Manager.py
-File Structure
-bajranj.docx: Description of the file.
-dpi_settings.json: Saves GUI settings for scaling widgets, default value is 96.
-File_Manager.py: Main file where program execution starts, imports other .py files directly or in chain.
-Icons/: Folder containing all images like .ico, .png.
-mysql_conn.py: Contains code for all communication between database, e.g., insert, delete, update, or retrieve data to show in GUI.
-open_details.py: Contains a class of frame used to create a custom frame with widgets to edit student details and save academic marks.
-output/: Folder carrying .exe file of File_Manager.py.
-output.txt: Simple text file containing saved database location and port number, edited from File_Manager if default is not connected or offline.
-requirements.txt: Contains all dependent libraries for the project.
-save_to_file.py: Contains GUI for saving database location and port number in output.txt file.
-user_pic_upload.py: Used to communicate with data only to store images.
-Dependencies
-List of dependent libraries for the project.
+   ```bash
+   python File_Manager.py
 
-Output
-contains.exe file.
+# Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue if you find any bugs or have any suggestions for improvements.
