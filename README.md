@@ -1,5 +1,7 @@
 # File Manager 2025
 
+![FM2025 banner image](screenshots/banner.png)
+
 The Student Data Management System is a Python-based desktop application GUI designed for efficiently managing student data. It provides a user-friendly interface for storing and managing various student details such as name, roll number, SRN (Student Registration Number), and other personal documents like parent documents in PDF format. Additionally, the application allows users to save academic details for students for three terms - first, second, and final terms.
 
 ## Features
